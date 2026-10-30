@@ -36,7 +36,7 @@ make AddModule MODULE_NAME=counter MODULE_TYPE=digital PARENT=my_chip
 ## Collect the Top Level
 
 \`\`\`bash
-make CreateCaravel PROJECT_NAME=my_chip_top
+make CreateTop PROJECT_NAME=my_chip_top
 \`\`\`
 
 ## Helpful Commands

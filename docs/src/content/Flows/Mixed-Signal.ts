@@ -30,7 +30,7 @@ You get complete environments for both domains:
     *   Connect them at the top level.
 
 ## 4. Top-Level Strategy
-The tapeout needs one top-level wrapper. \`make CreateCaravel PROJECT_NAME=<top>\` collects every block's outputs into \`caravel/\` and writes \`caravel/src/project.v\`, a module named \`<top>\`. Pick a name no block already uses.
+The tapeout needs one top-level wrapper. \`make CreateTop PROJECT_NAME=<top>\` collects every block's outputs into \`top/\` and writes \`top/src/project.v\`, a module named \`<top>\`. Pick a name no block already uses.
 
 *   **Digital Top**: Instantiate analog macros as blackboxes in Verilog.
 *   **Analog Top**: Use the analog wrapper and place digital blocks as macros.

@@ -1,12 +1,12 @@
 ANALOG_LIB_REPO := https://github.com/UW-ASIC/AnalogLibrary.git
 ANALOG_DIR := ../analog
 DIGITAL_DIR := ../digital
-CARAVEL_DIR := ../caravel
+TOP_DIR := ../top
 
 HAS_ANALOG := $(shell [ -d "$(ANALOG_DIR)" ] && echo "1" || echo "0")
 HAS_DIGITAL := $(shell [ -d "$(DIGITAL_DIR)" ] && echo "1" || echo "0")
-HAS_CARAVEL := $(shell [ -d "$(CARAVEL_DIR)" ] && echo "1" || echo "0")
-# caravel/ is output collected from the blocks, so it does not change the project type.
+HAS_TOP := $(shell [ -d "$(TOP_DIR)" ] && echo "1" || echo "0")
+# top/ is output collected from the blocks, so it does not change the project type.
 STATE_KEY := $(HAS_ANALOG)$(HAS_DIGITAL)
 PROJECT_STATE := $(strip \
 	$(if $(filter 00,$(STATE_KEY)),none, \
@@ -16,7 +16,7 @@ PROJECT_STATE := $(strip \
 
 include utility.mk
 
-.PHONY: CreateProject AddAnalogBlock AddDigitalModule CreateCaravel DeleteAll status help _create_analog_block _create_digital_structure SchemifySite
+.PHONY: CreateProject AddAnalogBlock AddDigitalModule CreateTop DeleteAll status help _create_analog_block _create_digital_structure SchemifySite
 
 help:
 	@echo "Project Management Makefile"
@@ -30,8 +30,8 @@ help:
 	@echo "  AddAnalogBlock BLOCK_NAME=name [DEPENDS=\"blk1 blk2\"]"
 	@echo "  AddDigitalModule MODULE_NAME=name"
 	@echo ""
-	@echo "Top-level Integration (collects block outputs into caravel/):"
-	@echo "  CreateCaravel PROJECT_NAME=name"
+	@echo "Top-level Integration (collects block outputs into top/):"
+	@echo "  CreateTop PROJECT_NAME=name"
 	@echo ""
 	@echo "Schemify (online schematic viewer):"
 	@echo "  SchemifySite - import every analog block, simulate its benches, build the site"
@@ -78,36 +78,36 @@ AddDigitalModule:
 	@$(MAKE) _create_digital_structure MODULE_NAME=$(MODULE_NAME)
 	@echo "Module $(MODULE_NAME) added successfully!"
 
-CreateCaravel:
+CreateTop:
 	@echo "Creating top-level integration directory"
-	$(call check-param,PROJECT_NAME,make CreateCaravel PROJECT_NAME=myproject)
+	$(call check-param,PROJECT_NAME,make CreateTop PROJECT_NAME=myproject)
 	$(if $(filter none,$(PROJECT_STATE)),$(error No project exists. Create a project first))
-	@mkdir -p $(CARAVEL_DIR)
-	@cp -r caravel/* $(CARAVEL_DIR)/ 2>/dev/null || true
-	@sed -i 's/@PROJECT_NAME@/$(PROJECT_NAME)/g' $(CARAVEL_DIR)/src/project.v
-	$(if $(filter digital,$(PROJECT_STATE)),@rm -rf $(CARAVEL_DIR)/{def$(COMMA)gds$(COMMA)lef};)
+	@mkdir -p $(TOP_DIR)
+	@cp -r top/* $(TOP_DIR)/ 2>/dev/null || true
+	@sed -i 's/@PROJECT_NAME@/$(PROJECT_NAME)/g' $(TOP_DIR)/src/project.v
+	$(if $(filter digital,$(PROJECT_STATE)),@rm -rf $(TOP_DIR)/{def$(COMMA)gds$(COMMA)lef};)
 	$(if $(filter mixed digital,$(PROJECT_STATE)),\
-		@mkdir -p $(CARAVEL_DIR)/src $(CARAVEL_DIR)/test; \
+		@mkdir -p $(TOP_DIR)/src $(TOP_DIR)/test; \
 		for srcdir in $(DIGITAL_DIR)/*/src; do \
-			[ -d "$$srcdir" ] && cp -r "$$srcdir"/* $(CARAVEL_DIR)/src/ 2>/dev/null || true; \
+			[ -d "$$srcdir" ] && cp -r "$$srcdir"/* $(TOP_DIR)/src/ 2>/dev/null || true; \
 		done; \
 		for testdir in $(DIGITAL_DIR)/*/test; do \
-			[ -d "$$testdir" ] && cp -r "$$testdir"/* $(CARAVEL_DIR)/test/ 2>/dev/null || true; \
+			[ -d "$$testdir" ] && cp -r "$$testdir"/* $(TOP_DIR)/test/ 2>/dev/null || true; \
 		done;)
 	$(if $(filter analog mixed,$(PROJECT_STATE)),\
 		@for blk in $(ANALOG_DIR)/*/; do \
 			[ "$$(basename $$blk)" = "library" ] && continue; \
 			[ -d "$$blk/output" ] || continue; \
 			for kind in def gds lef; do \
-				[ -d "$$blk/output/$$kind" ] && mkdir -p $(CARAVEL_DIR)/$$kind && \
-					cp -r "$$blk/output/$$kind"/* $(CARAVEL_DIR)/$$kind/ 2>/dev/null || true; \
+				[ -d "$$blk/output/$$kind" ] && mkdir -p $(TOP_DIR)/$$kind && \
+					cp -r "$$blk/output/$$kind"/* $(TOP_DIR)/$$kind/ 2>/dev/null || true; \
 			done; \
 		done;)
-	@echo "Caravel project created successfully!"
+	@echo "Top project created successfully!"
 
 DeleteAll:
 	@echo "Deleting all project files..."
-	@rm -rf $(ANALOG_DIR) $(DIGITAL_DIR) $(CARAVEL_DIR)
+	@rm -rf $(ANALOG_DIR) $(DIGITAL_DIR) $(TOP_DIR)
 	@echo "All project files deleted successfully!"
 
 status:
@@ -122,9 +122,9 @@ status:
 	@$(MAKE) -s _status_analog
 	@$(MAKE) -s _status_digital
 	@echo ""
-	@echo "Caravel Status:"
+	@echo "Top Status:"
 	@echo "=============="
-	@$(MAKE) -s _status_caravel
+	@$(MAKE) -s _status_top
 
 # =======================================================================
 # Schemify: every analog block online

@@ -3,8 +3,8 @@
 AMTemplate: analog and mixed-signal ASIC projects on open-source tools.
 `.flows/` is the template (Makefiles, Nix environments, per-flow build
 scripts); a project's design lives in the `analog/` and `digital/`
-directories `make -C .flows CreateProject` creates, and `caravel/` collects
-them for tapeout (`make -C .flows CreateCaravel`). `docs/` is the
+directories `make -C .flows CreateProject` creates, and `top/` collects
+them for tapeout (`make -C .flows CreateTop`). `docs/` is the
 user documentation.
 
 ## Skills to load first

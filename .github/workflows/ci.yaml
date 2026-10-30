@@ -4,7 +4,7 @@ on:
     paths:
       - 'analog/**'
       - 'digital/**'
-      - 'caravel/**'
+      - 'top/**'
       - '.github/workflows/**'
   workflow_dispatch:
 jobs:
@@ -14,20 +14,20 @@ jobs:
       has_analog: ${{ steps.check.outputs.has_analog }}
       has_digital: ${{ steps.check.outputs.has_digital }}
       project_type: ${{ steps.check.outputs.project_type }}
-      has_caravel: ${{ steps.check.outputs.has_caravel }}
+      has_top: ${{ steps.check.outputs.has_top }}
     steps:
       - name: checkout repo
         uses: actions/checkout@v4
       
-      - name: Check for caravel directory and detect project structure
+      - name: Check for top directory and detect project structure
         id: check
         run: |
           # Detect project structure using same logic as .flows/Makefile
-          # STATE_KEY is HAS_ANALOG+HAS_DIGITAL+HAS_CARAVEL (e.g., "010" = digital only)
+          # STATE_KEY is HAS_ANALOG+HAS_DIGITAL+HAS_TOP (e.g., "010" = digital only)
           
           HAS_ANALOG="0"
           HAS_DIGITAL="0"
-          HAS_CARAVEL="0"
+          HAS_TOP="0"
           
           if [ -d "analog" ]; then
             HAS_ANALOG="1"
@@ -37,11 +37,11 @@ jobs:
             HAS_DIGITAL="1"
           fi
           
-          if [ -d "caravel" ]; then
-            HAS_CARAVEL="1"
+          if [ -d "top" ]; then
+            HAS_TOP="1"
           fi
           
-          STATE_KEY="${HAS_ANALOG}${HAS_DIGITAL}${HAS_CARAVEL}"
+          STATE_KEY="${HAS_ANALOG}${HAS_DIGITAL}${HAS_TOP}"
           
           # Determine project type based on STATE_KEY (matching .flows/Makefile logic)
           case "${STATE_KEY}" in
@@ -49,13 +49,13 @@ jobs:
             "110"|"111") PROJECT_TYPE="mixed" ;;
             "010"|"011") PROJECT_TYPE="digital" ;;
             "100"|"101") PROJECT_TYPE="analog" ;;
-            "001") PROJECT_TYPE="caravel" ;;
+            "001") PROJECT_TYPE="top" ;;
             *) PROJECT_TYPE="unknown" ;;
           esac
           
           echo "has_analog=$( [ \"${HAS_ANALOG}\" = \"1\" ] && echo 'true' || echo 'false' )" >> $GITHUB_OUTPUT
           echo "has_digital=$( [ \"${HAS_DIGITAL}\" = \"1\" ] && echo 'true' || echo 'false' )" >> $GITHUB_OUTPUT
-          echo "has_caravel=$( [ \"${HAS_CARAVEL}\" = \"1\" ] && echo 'true' || echo 'false' )" >> $GITHUB_OUTPUT
+          echo "has_top=$( [ \"${HAS_TOP}\" = \"1\" ] && echo 'true' || echo 'false' )" >> $GITHUB_OUTPUT
           echo "project_type=${PROJECT_TYPE}" >> $GITHUB_OUTPUT
           
 

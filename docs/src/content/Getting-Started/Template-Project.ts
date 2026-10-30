@@ -21,7 +21,7 @@ AMTemplate/
 ├── .flows/          # The main workspace
 │   ├── analog/     # Analog workspace (schematics, layouts)
 │   ├── digital/    # Digital workspace (verilog, tests)
-│   ├── caravel/    # Top-level wrapper, copied out by CreateCaravel
+│   ├── top/    # Top-level wrapper, copied out by CreateTop
 │   ├── env/        # Nix environment definitions
 │   └── Makefile    # The master command runner
 ├── env.sh          # Entry point script

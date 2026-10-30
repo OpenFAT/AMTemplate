@@ -5,9 +5,6 @@ on:
     branches: ["main"]
     paths:
       - "docs/**"
-      - "analog/**"
-      - ".flows/tools/schemify_*"
-      - ".github/workflows/schemify.yaml"
   workflow_dispatch:
 
 permissions:
@@ -20,12 +17,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Pages hosts one site per repo, so the Schemify viewer ships inside the docs at /schemify/.
-  schemify:
-    uses: ./.github/workflows/schemify.yaml
-
   deploy:
-    needs: schemify
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -46,13 +38,6 @@ jobs:
       - name: Build
         working-directory: docs
         run: bun run build
-
-      - name: Add the Schemify viewer
-        uses: actions/download-artifact@v4
-        continue-on-error: true # no analog/ blocks, no viewer
-        with:
-          name: schemify-site
-          path: docs/dist/schemify
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
