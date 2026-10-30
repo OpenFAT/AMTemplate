@@ -1,0 +1,21 @@
+# Digital Project Configuration
+PROJECT = @MODULE_NAME@
+DESIGN_TOP := @MODULE_NAME@
+RTL_FILES := $(shell find ../../../ -name "*.v" -o -name "*.sv")
+RTL_FILES_H := $(shell find ../../ -name "*.vh" -o -name "*.svh")
+TB_FILES := $(shell find ../../test -name "*_tb.v" -o -name "tb_*.v")
+
+# This is used with XSCHEM if in mixed-signal project
+TB_TOP := ../../test/tb_@MODULE_NAME@.v
+TB_TOP_MODULE := tb_@MODULE_NAME@
+
+COCOTB_TEST_FILES := $$(shell find ../../test -name "test_*.py")
+TOPLEVEL_TB_MODULES := tb_@MODULE_NAME@
+MODULE_TESTS := test_@MODULE_NAME@
+PROJECT_TYPE = digital
+
+# Floorplan for `make -C build/synthesis harden`. Empty DIE_AREA sizes the die from
+# CORE_UTIL; set it (x0 y0 x1 y1 in um) to fix the die. DEF_TEMPLATE, a DEF path from this
+# module's directory, takes the die area and pin positions from a DEF you were given.
+DIE_AREA =
+DEF_TEMPLATE =

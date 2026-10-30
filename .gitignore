@@ -1,0 +1,17 @@
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Tools
+.venv/
+.tools/
+.tmp/
+
+# Build outputs
+node_modules/
+docs/dist/
+__pycache__/

@@ -1,0 +1,46 @@
+name: GDS
+# Hardens every digital module with OpenLane 2 inside the project's nix shell and uploads
+# its run. Analog layout is drawn by hand, so there is nothing to build for it here.
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  discover-modules:
+    runs-on: ubuntu-24.04
+    outputs:
+      modules: ${{ steps.find-modules.outputs.modules }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Find digital modules
+        id: find-modules
+        run: |
+          MODULES=$(find digital -mindepth 1 -maxdepth 1 -type d -exec test -f {}/build/synthesis/Makefile \; -print | xargs -I{} basename {} | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "Found modules: $MODULES"
+          echo "modules=$MODULES" >> $GITHUB_OUTPUT
+
+  harden:
+    needs: discover-modules
+    if: needs.discover-modules.outputs.modules != '[]'
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.discover-modules.outputs.modules) }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+
+      - name: Harden ${{ matrix.module }}
+        run: nix-shell .flows/env/shell.nix --argstr type digital --run "make -C digital/${{ matrix.module }}/build/synthesis harden"
+
+      - name: Upload GDS
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gds-${{ matrix.module }}
+          path: digital/${{ matrix.module }}/build/synthesis/runs/

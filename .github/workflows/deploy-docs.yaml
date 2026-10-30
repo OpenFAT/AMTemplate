@@ -1,0 +1,67 @@
+name: Deploy Docs
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "docs/**"
+      - "analog/**"
+      - ".flows/tools/schemify_*"
+      - ".github/workflows/schemify.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Pages hosts one site per repo, so the Schemify viewer ships inside the docs at /schemify/.
+  schemify:
+    uses: ./.github/workflows/schemify.yaml
+
+  deploy:
+    needs: schemify
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        working-directory: docs
+        run: bun install
+
+      - name: Build
+        working-directory: docs
+        run: bun run build
+
+      - name: Add the Schemify viewer
+        uses: actions/download-artifact@v4
+        continue-on-error: true # no analog/ blocks, no viewer
+        with:
+          name: schemify-site
+          path: docs/dist/schemify
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'docs/dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

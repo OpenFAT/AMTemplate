@@ -1,0 +1,104 @@
+name: schemify
+# Converts every analog/<block>/ xschem tree to Schemify, simulates its testbenches with
+# ngspice + sky130, and uploads a static site (`schemify-site`) that opens each block in
+# Schemify's browser editor. deploy-docs.yaml publishes it under /schemify/ on Pages.
+on:
+  workflow_dispatch:
+  workflow_call:
+
+env:
+  PDK: sky130A
+  PDK_VERSION: fa87f8f4bbcc7255b6f0c0fb506960f531ae2392 # keep equal to .flows/env/shell.nix
+  RUST_TOOLCHAIN: "1.95.0" # Schemify's rust-version
+
+jobs:
+  site:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Any analog blocks?
+        id: check
+        run: echo "has_analog=$([ -d analog ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      # Schemify has no releases yet, so build from each repo's HEAD, cached per revision.
+      - name: Schemify revisions
+        if: steps.check.outputs.has_analog == 'true'
+        id: rev
+        run: |
+          echo "schemify=$(git ls-remote https://github.com/OpenFAT/Schemify HEAD | cut -f1)" >> "$GITHUB_OUTPUT"
+          echo "interop=$(git ls-remote https://github.com/OpenFAT/Interoperate HEAD | cut -f1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        if: steps.check.outputs.has_analog == 'true'
+        id: cache
+        with:
+          path: |
+            ~/schemify/bin
+            ~/schemify/web
+          key: schemify-${{ steps.rev.outputs.schemify }}-${{ steps.rev.outputs.interop }}
+
+      - uses: dtolnay/rust-toolchain@master
+        if: steps.check.outputs.has_analog == 'true' && steps.cache.outputs.cache-hit != 'true'
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: wasm32-unknown-unknown
+      - name: Build Schemify (CLI, xschem importer, web editor)
+        if: steps.check.outputs.has_analog == 'true' && steps.cache.outputs.cache-hit != 'true'
+        id: build
+        run: |
+          cargo install --locked --root ~/schemify --git https://github.com/OpenFAT/Schemify \
+            --rev ${{ steps.rev.outputs.schemify }} schemify-cli --bin schemify
+          cargo install --locked --root ~/schemify --git https://github.com/OpenFAT/Interoperate \
+            --rev ${{ steps.rev.outputs.interop }} --features cli --bin schemify-interop
+          git clone https://github.com/OpenFAT/Schemify ~/schemify-src
+          git -C ~/schemify-src checkout ${{ steps.rev.outputs.schemify }}
+          cd ~/schemify-src
+          cargo build --release --target wasm32-unknown-unknown -p schemify-app --bin schemify-gui
+          echo "wasm_bindgen=$(grep -A1 '^name = "wasm-bindgen"$' Cargo.lock | sed -n 's/^version = "\(.*\)"/\1/p')" >> "$GITHUB_OUTPUT"
+      - uses: taiki-e/install-action@v2
+        if: steps.build.outcome == 'success'
+        with:
+          tool: wasm-bindgen@${{ steps.build.outputs.wasm_bindgen }}
+      - name: Web editor bundle
+        if: steps.build.outcome == 'success'
+        run: |
+          cd ~/schemify-src
+          wasm-bindgen --target web --no-typescript --out-name schemify --out-dir crates/app/web/pkg \
+            target/wasm32-unknown-unknown/release/schemify-gui.wasm
+          cp -r crates/app/web ~/schemify/web
+
+      - uses: actions/cache@v4
+        if: steps.check.outputs.has_analog == 'true'
+        id: pdk
+        with:
+          path: ~/.volare
+          key: volare-sky130-${{ env.PDK_VERSION }}
+      - name: Tools (ngspice, sky130, xschem devices)
+        if: steps.check.outputs.has_analog == 'true'
+        run: |
+          sudo apt-get update && sudo apt-get install -y ngspice
+          if [ "${{ steps.pdk.outputs.cache-hit }}" != true ]; then
+            pip install volare==0.20.6
+            volare enable --pdk sky130 "$PDK_VERSION"
+          fi
+          # sky130's ngspice settings (hsa compatibility: nf vs W), as xschem users get them.
+          cp "$HOME/.volare/$PDK/libs.tech/ngspice/spinit" ~/.spiceinit
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/StefanSchippers/xschem ~/xschem
+          git -C ~/xschem sparse-checkout set xschem_library/devices
+          echo "$HOME/schemify/bin" >> "$GITHUB_PATH"
+
+      - name: Import, simulate, build the site
+        if: steps.check.outputs.has_analog == 'true'
+        env:
+          PDK_ROOT: /home/runner/.volare
+          XSCHEM_LIBRARY: /home/runner/xschem/xschem_library
+        run: |
+          .flows/tools/schemify_site.sh site
+          cp -r ~/schemify/web site/editor
+
+      - uses: actions/upload-artifact@v4
+        if: steps.check.outputs.has_analog == 'true'
+        with:
+          name: schemify-site
+          path: site
+          include-hidden-files: true # the runs CI simulated live in each project's .schemify/
