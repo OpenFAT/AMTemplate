@@ -54,7 +54,7 @@ xschem:
 	$(PLUGIN) interop.xschem_export $$cells build/schematic/xschem
 	@echo "Exported to xschem/ (report: xschem/xschem-export.report.md)"
 
-# Run every DeSpice circuit under netlist/ and capture the deck it prints.
+# Run every Python circuit script under netlist/ and capture the deck it prints.
 # The convention is deliberately "the script writes a netlist to stdout" rather than an
 # API contract: it holds for `print(circuit)` and for `print(bench.netlist())` alike, so a
 # testbench script and a plain circuit script are the same kind of thing to this Makefile.
@@ -76,7 +76,7 @@ import:
 	$(if $(NETLIST),,$(error Usage: make import NETLIST=<name>  # for $(NETLIST_DIR)/<name>.spice))
 	@[ -f "$(NETLIST_DIR)/$(NETLIST).spice" ] || { \
 		echo "No such deck: $(NETLIST_DIR)/$(NETLIST).spice"; \
-		echo "Run 'make netlist' first if it comes from a DeSpice script."; exit 1; }
+		echo "Run 'make netlist' first if it comes from a Python script."; exit 1; }
 	cp $(NETLIST_DIR)/$(NETLIST).spice ../../$(NETLIST).spice
 	$(PLUGIN) cktimg.import $(NETLIST).spice; s=$$?; rm -f ../../$(NETLIST).spice; exit $$s
 	@echo "Cells in ../../schematics/, the bench in ../../test/ — open one with: make schematic TOP_SCHEMATIC=<cell>"

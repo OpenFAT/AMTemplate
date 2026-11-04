@@ -30,7 +30,6 @@ Project-specific:
 
 | Skill | Use it for here |
 |---|---|
-| `analog-netlist-first` | `.flows/analog/`: SpiceRack netlist to cktImg schematic to simulation (in `.claude/skills/`) |
 | `spice-engine` | Reading a simulation result: tolerances, convergence, which reference to trust |
 
 ## The method
