@@ -1,19 +1,27 @@
 {
   type ? "mixed",
+  # nixos-25.11, pinned by commit and content hash.
   pkgs ?
-    import (builtins.fetchTarball "https://github.com/NixOS/nixpkgs/archive/nixos-25.11.tar.gz")
-      { },
+    import (builtins.fetchTarball {
+      url = "https://github.com/NixOS/nixpkgs/archive/b6018f87da91d19d0ab4cf979885689b469cdd41.tar.gz";
+      sha256 = "0ln4yw7z3g9lb0x081hc0pd2j1wsx2qqf6bgmwwvdbkcl4bcy1dp";
+    }) { },
 }:
 let
+  # Every flake is pinned by commit (each one's flake.lock pins its own inputs). Bump a
+  # rev here, never drop it: an unpinned flake reaches every project the moment it lands.
   # Schemify: the schematic editor each analog block is a project of, and the online
   # viewer's tools (`make -C .flows SchemifySite`). Its plugins come from each block's
   # project.lua, never from here.
-  schemify = builtins.getFlake "github:OpenFAT/Schemify";
+  schemify = builtins.getFlake "github:OpenFAT/Schemify/3ccd6a308f2d0351318a5110d4919f2013508a0a";
   # ESPice: the SPICE simulator (`BACKEND = espice`). VerA: the Verilog-A compiler ESPice's
   # models come through.
-  espice = builtins.getFlake "github:OpenFAT/ESPice";
-  vera = builtins.getFlake "github:OpenFAT/VerA";
-  analog = import ./Analog.nix { inherit pkgs schemify espice vera; };
+  espice = builtins.getFlake "github:OpenFAT/ESPice/39aa1823c6421cf2cdc5689d24c8ecd0e468f1dc";
+  vera = builtins.getFlake "github:OpenFAT/VerA/d26fe7f1144d2e0fbcff4a3618adadc2f794454b";
+  # VLSI netgen for LVS, which nixpkgs lacks (`pkgs.netgen` is an unrelated mesh generator).
+  # Cached at https://nix-cache.fossi-foundation.org; without that substituter it compiles.
+  nixEda = builtins.getFlake "github:fossi-foundation/nix-eda/8375faf1454a0ba007ad0d810bd59f3bf05a1e6a";
+  analog = import ./Analog.nix { inherit pkgs schemify espice vera nixEda; };
   digital = import ./Digital.nix { inherit pkgs; };
 
   useAnalog = type == "analog" || type == "mixed";

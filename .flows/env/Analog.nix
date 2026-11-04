@@ -3,6 +3,7 @@
   schemify,
   espice,
   vera,
+  nixEda,
 }:
 let
   # The shared-library build of ngspice. The Rust analog crates link against it, which
@@ -33,6 +34,7 @@ in
     ngspiceShared
     pkgs.ngspice
     pkgs.magic-vlsi
+    nixEda.packages.${pkgs.system}.netgen
 
     # Schemify: `schemify` and its editor `schemify-gui`. Its plugins (interop for xschem,
     # cktimg) come from each block's project.lua; the web editor bundle is built on demand
