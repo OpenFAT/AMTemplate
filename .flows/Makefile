@@ -146,7 +146,7 @@ SchemifySite:
 		echo "=== $$m"; \
 		for bench in $$m../../test/*.shbench; do \
 			[ -f "$$bench" ] || continue; \
-			echo "--- $$bench"; schemify --clean --project $$m run "$$bench" || true; \
+			echo "--- $$bench"; schemify --project $$m --clean run "$$bench" || true; \
 		done; \
 	done
 	schemify --clean publish $(SCHEMIFY_MANIFESTS) -o $(SCHEMIFY_SITE)

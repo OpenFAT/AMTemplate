@@ -13,7 +13,7 @@ endif
 # interop plugin's export.
 # --clean skips the user's init.lua and packages (a personal `schemify.sim` path would
 # otherwise redirect the simulator); the project's own plugins still load.
-SCHEMIFY = schemify --clean --project .
+SCHEMIFY = schemify --project . --clean
 ESPICE = espice
 NETLIST_DIR = ../../netlist
 TOP_CELL = ../../schematics/$(TOP_SCHEMATIC).shcomp
@@ -68,14 +68,16 @@ netlist:
 	if [ $$found -eq 0 ]; then echo "No .py circuits in $(NETLIST_DIR)/"; fi
 
 # Place a deck with the cktimg plugin: netlist/<stem>.spice -> one .shcomp per .subckt and a
-# .shbench for the top level, written where the manifest's `place` rules say (schematics/,
-# test/). cktimg never overwrites a cell that already exists.
+# .shbench for the top level. cktimg writes beside the deck, and `place` routes only bare
+# names, so the deck is copied to the block root for the import: its cells then land where
+# the manifest's `place` rules say (schematics/, test/). cktimg never overwrites a cell.
 import:
 	$(if $(NETLIST),,$(error Usage: make import NETLIST=<name>  # for $(NETLIST_DIR)/<name>.spice))
 	@[ -f "$(NETLIST_DIR)/$(NETLIST).spice" ] || { \
 		echo "No such deck: $(NETLIST_DIR)/$(NETLIST).spice"; \
 		echo "Run 'make netlist' first if it comes from a DeSpice script."; exit 1; }
-	$(PLUGIN) cktimg.import netlist/$(NETLIST).spice
+	cp $(NETLIST_DIR)/$(NETLIST).spice ../../$(NETLIST).spice
+	$(PLUGIN) cktimg.import $(NETLIST).spice; s=$$?; rm -f ../../$(NETLIST).spice; exit $$s
 	@echo "Wrote ../../test/$(NETLIST).shbench — open it with: make schematic TOP_SCHEMATIC=<cell>"
 
 ## deps - build the blocks this one is built from, in the order they are listed

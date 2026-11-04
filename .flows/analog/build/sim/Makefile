@@ -14,7 +14,7 @@ endif
 # over. Sizing loops (gm/Id, optimisers) are bench sweeps or plugins, not a target here.
 
 # --clean: the user's init.lua (its `schemify.sim` paths) never reaches the flow.
-SCHEMIFY = schemify --clean --project ../schematic
+SCHEMIFY = schemify --project ../schematic --clean
 BENCHES = $(sort $(wildcard ../../test/*.shbench))
 
 .PHONY: all sim test list clean
