@@ -79,7 +79,7 @@ import:
 		echo "Run 'make netlist' first if it comes from a DeSpice script."; exit 1; }
 	cp $(NETLIST_DIR)/$(NETLIST).spice ../../$(NETLIST).spice
 	$(PLUGIN) cktimg.import $(NETLIST).spice; s=$$?; rm -f ../../$(NETLIST).spice; exit $$s
-	@echo "Wrote ../../test/$(NETLIST).shbench — open it with: make schematic TOP_SCHEMATIC=<cell>"
+	@echo "Cells in ../../schematics/, the bench in ../../test/ — open one with: make schematic TOP_SCHEMATIC=<cell>"
 
 ## deps - build the blocks this one is built from, in the order they are listed
 #
