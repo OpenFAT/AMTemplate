@@ -7,15 +7,15 @@ TOP_LAYOUT = @BLOCK_NAME@
 # Sibling blocks this one is built from, space separated.
 #
 # A top-level block names the blocks it instantiates; a leaf names nothing. Listing a
-# dependency puts its symbols and schematics on this block's xschem library path, so its
+# dependency puts its schematics/ in this block's schemify.project as a library, so its
 # symbol can be placed here, and makes `make deps` build it first.
 #
 # Set with: make AddAnalogBlock BLOCK_NAME=ota DEPENDS="bandgap diffpair"
 DEPENDS = @BLOCK_DEPENDS@
 
-# Simulator for `make -C build/sim`. ngspice is the one to trust for anything headed
-# to silicon; vacask is the Verilog-A path, espice the faster-but-pre-release one.
-BACKEND ?= ngspice
+# Netlist dialect `make -C build/sim` hands `schemify run`: espice, or ngspice to
+# cross-check a result against the reference simulator.
+BACKEND ?= espice
 
 # Layout outline for `make -C build/layout init_layout`. DEF_TEMPLATE, a DEF path from
 # this block's directory (e.g. layout/outline.def), gives the die and pins when you have

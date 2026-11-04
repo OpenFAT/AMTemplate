@@ -9,7 +9,7 @@ export const content = `
 Welcome to **AMTemplate**. This repository provides a unified environment for designing Digital, Analog, and Mixed-Signal chips.
 
 ## 1. Initial Setup
-Before you begin, you need to enter the reproducible environment. This ensures you have all the correct tools (Verilator, XSchem, Magic, etc.) installed automatically.
+Before you begin, you need to enter the reproducible environment. This ensures you have all the correct tools (Verilator, Schemify, ESPice, Magic, etc.) installed automatically.
 
 *   **Read more**: [Setup Guide](/Environment/Setup)
 
@@ -31,7 +31,7 @@ make CreateProject PROJECT_NAME=my_first_chip PROJECT_TYPE=digital
 Now that you have a project, follow the specific flow for your domain:
 
 *   **[Digital Flow](/Flows/Digital)**: For Verilog/SystemVerilog designs, simulation, and hardening.
-*   **[Analog Flow](/Flows/Analog)**: For schematic capture (XSchem) and custom layout (Magic/KLayout).
+*   **[Analog Flow](/Flows/Analog)**: For schematic capture (Schemify) and custom layout (Magic/KLayout).
 *   **[Mixed-Signal](/Flows/Mixed-Signal)**: For integrating analog and digital blocks.
 *   **[Cheatsheet](/Environment/Cheatsheet)**: A quick reference for all available commands.
 `

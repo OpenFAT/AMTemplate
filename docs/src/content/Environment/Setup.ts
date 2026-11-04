@@ -31,7 +31,7 @@ You can force a specific environment mode:
 ## Tools You Get
 
 - **Digital**: Verilator, Yosys, OpenLane2, Cocotb
-- **Analog**: XSchem, Magic, Ngspice, Netgen, KLayout
+- **Analog**: Schemify, ESPice, VerA, Magic, KLayout (XSchem and Ngspice for cross-checks)
 - **Common**: Python 3.12, Rust (Nightly), Make, Git
 
 Everything is pinned and reproducible. No manual dependency hell.

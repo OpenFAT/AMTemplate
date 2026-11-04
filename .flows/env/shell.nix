@@ -5,15 +5,15 @@
       { },
 }:
 let
-  # Everything the template needs that nixpkgs does not carry, prebuilt and cached:
-  # cktimg and spicerack (built there because nothing else caches them) plus VLSI netgen
-  # (re-exported from nix-eda — `pkgs.netgen` is an unrelated 3D mesh generator).
-  # Run `cachix use omarsiwy` first, or these compile locally.
-  eda = builtins.getFlake "github:OmarSiwy/EDA-Packaged";
-  # Schemify: a schematic editor that opens these xschem blocks, and the online viewer's
-  # tools (`make -C .flows SchemifySite`). Its plugins come from .flows/schemify/init.lua.
+  # Schemify: the schematic editor each analog block is a project of, and the online
+  # viewer's tools (`make -C .flows SchemifySite`). Its plugins come from each block's
+  # project.lua, never from here.
   schemify = builtins.getFlake "github:OpenFAT/Schemify";
-  analog = import ./Analog.nix { inherit pkgs eda schemify; };
+  # ESPice: the SPICE simulator (`BACKEND = espice`). VerA: the Verilog-A compiler ESPice's
+  # models come through.
+  espice = builtins.getFlake "github:OpenFAT/ESPice";
+  vera = builtins.getFlake "github:OpenFAT/VerA";
+  analog = import ./Analog.nix { inherit pkgs schemify espice vera; };
   digital = import ./Digital.nix { inherit pkgs; };
 
   useAnalog = type == "analog" || type == "mixed";
@@ -125,8 +125,9 @@ pkgs.mkShell {
     if [ "${type}" = "analog" ] || [ "${type}" = "mixed" ]; then
       echo "  - xschem: $(xschem --version 2>/dev/null | head -n 1 || echo 'custom build')"
       echo "  - magic: $(magic --version 2>/dev/null || echo 'from nixpkgs')"
-      echo "  - cktimg-json: $(command -v cktimg-json >/dev/null && echo ok || echo 'not found')"
-      echo "  - spicerack: $(python -c 'import spicerack' 2>/dev/null && echo ok || echo 'not found')"
+      echo "  - espice: $(command -v espice >/dev/null && echo ok || echo 'not found')"
+      echo "  - vera: $(command -v vera >/dev/null && echo ok || echo 'not found')"
+      echo "  - schemify: $(command -v schemify >/dev/null && echo ok || echo 'not found')"
     fi
 
     if [ "${type}" = "digital" ] || [ "${type}" = "mixed" ]; then

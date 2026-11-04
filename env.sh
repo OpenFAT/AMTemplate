@@ -22,8 +22,7 @@ elif [ "$OS" = "Linux" ]; then
         fi
     fi
 
-    # Binary cache for cktimg, spicerack and netgen. Without it these are a Zig build, a
-    # Rust build and an LVS tool nixpkgs does not ship — all compiled locally.
+    # Binary cache for ESPice. Without it ESPice is a Zig build compiled locally.
     if ! command -v cachix >/dev/null 2>&1; then
         echo "🔹 Setting up Cachix..."
         nix-shell -p cachix --run "cachix use omarsiwy"

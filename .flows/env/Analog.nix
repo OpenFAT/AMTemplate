@@ -1,12 +1,10 @@
 {
   pkgs,
-  eda,
   schemify,
+  espice,
+  vera,
 }:
 let
-  edaPkgs = eda.packages.${pkgs.system};
-  cktimgPkg = edaPkgs.cktimg;
-  spicerackPkg = edaPkgs.spicerack;
   # The shared-library build of ngspice. The Rust analog crates link against it, which
   # plain `ngspice` (a binary only) cannot satisfy.
   ngspiceShared = pkgs.libngspice;
@@ -27,28 +25,24 @@ let
 in
 {
   packages = [
-    # EDA tools, straight from nixpkgs.
+    # EDA tools, straight from nixpkgs. xschem and ngspice stay for cross-checks; the flow
+    # calls Schemify and ESPice instead.
     pkgs.xschem
     # Wrapped version of pkgs.klayout defined above
     klayout
-    # The VLSI LVS tool. NOT `pkgs.netgen`, which is a 3D tetrahedral mesh generator from
-    # ngsolve.org that shares nothing with this but a name — nixpkgs has no VLSI netgen
-    # under any attribute, which is why it comes through the EDA-Packaged pin.
-    edaPkgs.netgen
     ngspiceShared
     pkgs.ngspice
     pkgs.magic-vlsi
 
-    # Netlist-first flow. cktimgPkg ships `cktimg-json`, which .flows/tools/
-    # cktimg_to_xschem.py shells out to; spicerackPkg is a Python package and is reached
-    # through PYTHONPATH below rather than by landing a binary on PATH.
-    cktimgPkg
-    spicerackPkg
-
-    # Schemify: `schemify` and its editor `schemify-gui`. The xschem importer is the interop
-    # plugin, installed by `schemify pack sync` from .flows/schemify/init.lua; the web editor
-    # bundle is built on demand by `make -C .flows SchemifySite`.
+    # Schemify: `schemify` and its editor `schemify-gui`. Its plugins (interop for xschem,
+    # cktimg) come from each block's project.lua; the web editor bundle is built on demand
+    # by `make -C .flows SchemifySite`.
     schemify.packages.${pkgs.system}.schemify
+
+    # ESPice built from source (it has no release binaries yet); VerA's newest release
+    # binary. Both wrap the Zig they compile Verilog-A device code with.
+    espice.packages.${pkgs.system}.espice
+    vera.packages.${pkgs.system}.latest
 
     # Rust toolchain from nixpkgs
     pkgs.cargo
@@ -66,23 +60,12 @@ in
     export KLAYOUT_PATH="$PDK_ROOT/$PDK/libs.tech/klayout"
     export XSCHEM_USER_LIBRARY_PATH="$PDK_ROOT/$PDK/libs.tech/xschem"
     export XSCHEM_LIBRARY_PATH="$PDK_ROOT/$PDK/libs.tech/xschem:${pkgs.xschem}/share/xschem/xschem_library"
-    # Directories the Schemify interop plugin may read (`read:<NAME>` grants in
-    # .flows/schemify/init.lua): the analog blocks, xschem's own library (devices/), the PDK.
-    export ANALOG_ROOT="$PROJECT_ROOT/analog"
-    export XSCHEM_LIBRARY="${pkgs.xschem}/share/xschem/xschem_library"
 
     # === Rust Build Config ===
     export LIBCLANG_PATH="${pkgs.llvmPackages.libclang.lib}/lib"
     export BINDGEN_EXTRA_CLANG_ARGS="-I${pkgs.glibc.dev}/include $BINDGEN_EXTRA_CLANG_ARGS"
     export CPATH="${pkgs.python312}/include/python3.12:$CPATH"
     export NIX_LD_LIBRARY_PATH="${pkgs.python312}/lib:$NIX_LD_LIBRARY_PATH"
-
-    # === Analog Python Libraries ===
-    # spicerack is a nix-built Python package, and the venv shell.nix creates does not
-    # inherit system site-packages, so PYTHONPATH is what makes `import spicerack`
-    # resolve inside it. Prepended, not appended: the venv must not shadow it with a
-    # half-built copy from a previous `maturin develop`.
-    export PYTHONPATH="${spicerackPkg}/${pkgs.python312.sitePackages}:$PYTHONPATH"
 
     pip install maturin pytest
     for pkg in analog/library/dep_library/gmid analog/library/dep_library/UWASIC-ALG; do
