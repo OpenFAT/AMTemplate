@@ -189,10 +189,10 @@ _create_analog_block:
 		cp -r ../../../.flows/analog/build/validation/* ./validation/ 2>/dev/null || true && \
 		cp -r ../../../.flows/analog/build/sim/* ./sim/ 2>/dev/null || true && \
 		cp -r ../../../.flows/analog/build/va/* ./va/ 2>/dev/null || true
-	@{ printf 'schemify 1 project\n  init project.lua\n  root ../..\n\n'; \
+	@{ printf 'schemify 1 project\n  init project.lua\n  root ../..\n'; \
+		printf '  place tb_*.shcomp test\n  place *.shbench test\n  place *.shcomp schematics\n  place *.shprim schematics\n\n'; \
 		printf 'lib %s path schematics\n' $(BLOCK_NAME); \
-		for d in $(DEPENDS); do printf 'lib %s path ../%s/schematics\n' $$d $$d; done; \
-		printf '\nplace tb_*.shcomp test\nplace *.shbench test\nplace *.shcomp schematics\nplace *.shprim schematics\n'; } \
+		for d in $(DEPENDS); do printf 'lib %s path ../%s/schematics\n' $$d $$d; done; } \
 		> $(ANALOG_DIR)/$(BLOCK_NAME)/build/schematic/schemify.project
 	@printf '.schemify/\nspice/\nxschem/\n' > $(ANALOG_DIR)/$(BLOCK_NAME)/build/schematic/.gitignore
 
