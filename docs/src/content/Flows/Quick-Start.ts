@@ -28,6 +28,6 @@ make CreateProject PROJECT_NAME=my_chip PROJECT_TYPE=digital
 Select your domain to see detailed workflows:
 
 *   [**Digital Flow**](/Flows/Digital) - Verilog, Cocotb, OpenLane.
-*   [**Analog Flow**](/Flows/Analog) - XSchem, Magic/KLayout.
+*   [**Analog Flow**](/Flows/Analog) - Schemify, ESPice, Magic/KLayout.
 *   [**Mixed Signal**](/Flows/Mixed-Signal) - Integrating both worlds.
 `

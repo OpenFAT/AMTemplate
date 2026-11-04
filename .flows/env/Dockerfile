@@ -10,7 +10,7 @@ ENV NIX_CONFIG="filter-syscalls = false"
 # Install basic utilities
 RUN nix-env -iA nixpkgs.bash nixpkgs.cachix
 
-# Binary cache for cktimg, spicerack and netgen — without it the image build compiles them.
+# Binary cache for ESPice — without it the image build compiles it.
 RUN cachix use omarsiwy
 
 WORKDIR /workspace

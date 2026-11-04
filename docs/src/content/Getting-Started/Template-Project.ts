@@ -32,6 +32,6 @@ AMTemplate/
 *   **Unified Makefile**: A single interface for all tasks (\`make CreateProject\`, \`make verification\`, etc.).
 *   **Pre-configured Tools**:
     *   **Digital**: Verilator, Cocotb, OpenLane 2, Yosys.
-    *   **Analog**: XSchem, Ngspice, Magic, KLayout, Netgen.
+    *   **Analog**: Schemify, ESPice, VerA, Magic, KLayout.
 *   **CI/CD Ready**: The environment is built to run in CI pipelines.
 `
