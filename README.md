@@ -38,7 +38,7 @@ Each block is a [Schemify](https://github.com/OpenFAT/Schemify) project. Its man
 analog/
 ├── library/              UW-ASIC AnalogLibrary, one clone shared by every block
 └── <block>/
-    ├── schematics/       Schemify cells (.shcomp)
+    ├── schematics/       Schemify cells (.shcomp, .shprim)
     ├── test/             testbenches (.shbench, tb_*.shcomp)
     ├── netlist/          SPICE decks; `make import` places one as a schematic
     ├── va/               Verilog-A models

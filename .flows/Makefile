@@ -192,7 +192,7 @@ _create_analog_block:
 	@{ printf 'schemify 1 project\n  init project.lua\n  root ../..\n\n'; \
 		printf 'lib %s path schematics\n' $(BLOCK_NAME); \
 		for d in $(DEPENDS); do printf 'lib %s path ../%s/schematics\n' $$d $$d; done; \
-		printf '\nplace tb_*.shcomp test\nplace *.shbench test\nplace *.shcomp schematics\n'; } \
+		printf '\nplace tb_*.shcomp test\nplace *.shbench test\nplace *.shcomp schematics\nplace *.shprim schematics\n'; } \
 		> $(ANALOG_DIR)/$(BLOCK_NAME)/build/schematic/schemify.project
 	@printf '.schemify/\nspice/\nxschem/\n' > $(ANALOG_DIR)/$(BLOCK_NAME)/build/schematic/.gitignore
 
