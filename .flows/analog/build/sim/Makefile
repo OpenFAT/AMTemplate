@@ -7,14 +7,15 @@ endif
 
 # Run the block's Schemify benches.
 #
-# A testbench is a .shbench anywhere in the block (test/ by convention). `schemify run`
-# netlists it in BACKEND's dialect and simulates every corner and sweep it names; the runs
-# land in analog/<block>/.schemify/runs/. A bench's Verilog-A goes in as `.hdl "<model>.va"`
+# A testbench is a .shbench in the block's test/. `schemify run`, pointed at the block's
+# manifest in ../schematic/, netlists it in BACKEND's dialect and simulates every corner and
+# sweep it names; the runs land in ../schematic/.schemify/runs/. A bench's Verilog-A goes in as `.hdl "<model>.va"`
 # under espice, which compiles it itself (VerA linked in), so build/va has nothing to hand
 # over. Sizing loops (gm/Id, optimisers) are bench sweeps or plugins, not a target here.
 
-SCHEMIFY = schemify
-BENCHES = $(shell find ../.. -name '*.shbench' -not -path '*/.schemify/*' -not -path '*/build/*' | sort)
+# --clean: the user's init.lua (its `schemify.sim` paths) never reaches the flow.
+SCHEMIFY = schemify --clean --project ../schematic
+BENCHES = $(sort $(wildcard ../../test/*.shbench))
 
 .PHONY: all sim test list clean
 
@@ -24,7 +25,7 @@ all: sim
 sim: test
 
 test:
-	@if [ -z "$(BENCHES)" ]; then echo "No .shbench in this block."; exit 0; fi
+	@if [ -z "$(BENCHES)" ]; then echo "No .shbench in ../../test/."; exit 0; fi
 	@for b in $(BENCHES); do \
 		echo "=== $$b (backend: $(BACKEND)) ==="; \
 		$(SCHEMIFY) run --dialect $(BACKEND) "$$b" || exit 1; \
@@ -39,5 +40,5 @@ list:
 	done
 
 clean:
-	@rm -rf ../../.schemify/runs
+	@rm -rf ../schematic/.schemify/runs
 	@echo "Clean complete"

@@ -5,18 +5,21 @@ ifndef IN_NIX_SHELL
   $(error This Makefile must be run inside the nix-shell environment. Run ./env.sh first to enter the nix-shell)
 endif
 
-# The block is a Schemify project: analog/<block>/schemify.project, its plugins in
-# project.lua. Schemify draws and netlists it and ESPice simulates; xschem is never called,
-# it gets the cells through the interop plugin's export.
-SCHEMIFY = schemify
+# This directory holds the block's Schemify manifest (schemify.project) and plugins
+# (project.lua). The manifest's `root ../..` makes the block directory the project, and its
+# `place` rules write cells to ../../schematics/ and benches to ../../test/. A cell does not
+# sit under the manifest, so every call names it with --project. Schemify draws and
+# netlists, ESPice simulates; xschem is never called, it gets the cells through the
+# interop plugin's export.
+# --clean skips the user's init.lua and packages (a personal `schemify.sim` path would
+# otherwise redirect the simulator); the project's own plugins still load.
+SCHEMIFY = schemify --clean --project .
 ESPICE = espice
-PROJECT_DIR = ../..
 NETLIST_DIR = ../../netlist
-SCHEMATIC_DIR = ../../schematics
-TOP_CELL = $(SCHEMATIC_DIR)/$(TOP_SCHEMATIC).shcomp
-# A plugin command runs from the project root, so its paths are project-relative.
-# --trust trusts project.lua first, downloading any plugin it lists that is missing.
-PLUGIN = cd $(PROJECT_DIR) && $(SCHEMIFY) cmd --trust .
+TOP_CELL = ../../schematics/$(TOP_SCHEMATIC).shcomp
+# Plugin arguments are paths from the project root (the block directory). --trust trusts
+# project.lua first, downloading any plugin it lists that is missing.
+PLUGIN = $(SCHEMIFY) cmd --trust .
 
 .PHONY: schematic spice lvs_netlist xschem clean netlist import deps
 
@@ -27,7 +30,7 @@ schematic:
 		echo "Over SSH use 'ssh -X'; under WSL make sure WSLg or an X server is running."; \
 		exit 1; \
 	fi
-	$(SCHEMIFY) edit $(if $(wildcard $(TOP_CELL)),$(TOP_CELL),$(PROJECT_DIR))
+	$(SCHEMIFY) edit $(if $(wildcard $(TOP_CELL)),$(TOP_CELL),.)
 
 ## spice - run every netlist/*.spice deck through ESPice
 spice:
@@ -45,8 +48,8 @@ lvs_netlist:
 
 ## xschem - export every cell to xschem (.sch/.sym and an xschemrc fragment) in xschem/
 xschem:
-	@cells=$$(cd $(PROJECT_DIR) && find schematics netlist \( -name '*.shcomp' -o -name '*.shbench' \) 2>/dev/null); \
-	[ -n "$$cells" ] || { echo "No Schemify cells in schematics/ or netlist/."; exit 1; }; \
+	@cells=$$(cd ../.. && ls schematics/*.shcomp test/*.shbench 2>/dev/null); \
+	[ -n "$$cells" ] || { echo "No Schemify cells in ../../schematics/ or ../../test/."; exit 1; }; \
 	$(PLUGIN) interop.xschem_export $$cells build/schematic/xschem
 	@echo "Exported to xschem/ (report: xschem/xschem-export.report.md)"
 
@@ -64,15 +67,16 @@ netlist:
 	done; \
 	if [ $$found -eq 0 ]; then echo "No .py circuits in $(NETLIST_DIR)/"; fi
 
-# Place a deck with the cktimg plugin: netlist/<stem>.spice -> netlist/<stem>.shbench, plus one
-# .shcomp per .subckt, beside the deck. cktimg never overwrites a cell that already exists.
+# Place a deck with the cktimg plugin: netlist/<stem>.spice -> one .shcomp per .subckt and a
+# .shbench for the top level, written where the manifest's `place` rules say (schematics/,
+# test/). cktimg never overwrites a cell that already exists.
 import:
 	$(if $(NETLIST),,$(error Usage: make import NETLIST=<name>  # for $(NETLIST_DIR)/<name>.spice))
 	@[ -f "$(NETLIST_DIR)/$(NETLIST).spice" ] || { \
 		echo "No such deck: $(NETLIST_DIR)/$(NETLIST).spice"; \
 		echo "Run 'make netlist' first if it comes from a DeSpice script."; exit 1; }
 	$(PLUGIN) cktimg.import netlist/$(NETLIST).spice
-	@echo "Wrote $(NETLIST_DIR)/$(NETLIST).shbench — open it with: schemify edit $(NETLIST_DIR)/$(NETLIST).shbench"
+	@echo "Wrote ../../test/$(NETLIST).shbench — open it with: make schematic TOP_SCHEMATIC=<cell>"
 
 ## deps - build the blocks this one is built from, in the order they are listed
 #

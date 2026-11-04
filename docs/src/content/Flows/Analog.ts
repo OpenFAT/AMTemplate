@@ -16,8 +16,9 @@ make CreateProject PROJECT_NAME=my_amp PROJECT_TYPE=analog
 \`\`\`
 
 ## 2. Structure
-*   \`schemify.project\`, \`project.lua\`: the block is a **Schemify project**; \`project.lua\` lists its plugins.
-*   \`schematics/\`: **Circuit Design**. Schemify cells (\`.shcomp\`, \`.shbench\`).
+*   \`schematics/\`: **Circuit Design**. Schemify cells (\`.shcomp\`).
+*   \`test/\`: **Testbenches** (\`.shbench\`).
+*   \`build/schematic/\`: the block's Schemify manifest (\`schemify.project\`, \`root ../..\`) and \`project.lua\` (its plugins).
 *   \`layout/\`: **Physical Design**. KLayout/Magic files (\`.gds\`, \`.mag\`).
 *   \`build/\`: **Work Area**. Makefiles for tools.
 

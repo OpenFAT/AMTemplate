@@ -130,23 +130,26 @@ status:
 # Schemify: every analog block online
 # =======================================================================
 #
-# Every analog block is a Schemify project. Its benches are simulated (ESPice, the
-# blocks' default), and `schemify publish` lays the projects out beside the web editor.
+# Every analog block is a Schemify project, its manifest in build/schematic/. Its benches
+# (test/*.shbench) are simulated (ESPice, the blocks' default), and `schemify publish` lays
+# the projects out beside the web editor.
 SCHEMIFY_SITE ?= $(CURDIR)/../.tools/schemify-site
-SCHEMIFY_PROJECTS = $(dir $(wildcard $(ANALOG_DIR)/*/schemify.project))
+SCHEMIFY_MANIFESTS = $(dir $(wildcard $(ANALOG_DIR)/*/build/schematic/schemify.project))
 # The web editor bundle: a flake output (Schemify's `web` package), or a directory already
 # holding one (index.html + pkg/).
 SCHEMIFY_WEB ?= github:OpenFAT/Schemify\#web
 
 SchemifySite:
-	$(if $(SCHEMIFY_PROJECTS),,$(error No analog block is a Schemify project. Run AddAnalogBlock first))
+	$(if $(SCHEMIFY_MANIFESTS),,$(error No analog block has a Schemify project. Run AddAnalogBlock first))
 	@rm -rf $(SCHEMIFY_SITE)
-	@for blk in $(SCHEMIFY_PROJECTS); do \
-		echo "=== $$(basename $$blk)"; \
-		find $$blk -name '*.shbench' -not -path '*/.schemify/*' -not -path '*/build/*' | sort | \
-			while read -r bench; do echo "--- $$bench"; schemify run "$$bench" || true; done; \
+	@for m in $(SCHEMIFY_MANIFESTS); do \
+		echo "=== $$m"; \
+		for bench in $$m../../test/*.shbench; do \
+			[ -f "$$bench" ] || continue; \
+			echo "--- $$bench"; schemify --clean --project $$m run "$$bench" || true; \
+		done; \
 	done
-	schemify publish $(SCHEMIFY_PROJECTS) -o $(SCHEMIFY_SITE)
+	schemify --clean publish $(SCHEMIFY_MANIFESTS) -o $(SCHEMIFY_SITE)
 	@web='$(SCHEMIFY_WEB)'; [ -d "$$web" ] || \
 		web=$$(nix build --no-link --print-out-paths --extra-experimental-features 'nix-command flakes' "$$web"); \
 	cp -r "$$web/." $(SCHEMIFY_SITE)
@@ -161,16 +164,17 @@ SchemifySite:
 #
 # Blocks live at analog/<BLOCK_NAME>/, the same depth digital modules live at, so the two
 # trees agree and a relative path means the same thing in both. Each block is a Schemify
-# project: its manifest libraries are its own schematics/ and those of its DEPENDS blocks,
-# and project.lua (from analog/schemify/) lists its plugins. Only library/ stays up at
+# project whose manifest and project.lua (its plugins) sit in build/schematic/: `root ../..`
+# makes the block directory the project, `place` puts cells in schematics/ and benches in
+# test/, and its libraries are its own and its DEPENDS blocks' schematics/. Only library/ stays up at
 # analog/: it is one clone shared by every block, and a copy per block is how copies drift.
 _create_analog_block:
 	@mkdir -p $(ANALOG_DIR)/$(BLOCK_NAME)/build \
 		$(ANALOG_DIR)/$(BLOCK_NAME)/layout \
 		$(ANALOG_DIR)/$(BLOCK_NAME)/schematics \
+		$(ANALOG_DIR)/$(BLOCK_NAME)/test \
 		$(ANALOG_DIR)/$(BLOCK_NAME)/netlist \
 		$(ANALOG_DIR)/$(BLOCK_NAME)/va \
-		$(ANALOG_DIR)/$(BLOCK_NAME)/test \
 		$(ANALOG_DIR)/$(BLOCK_NAME)/output
 	@if [ ! -d "$(ANALOG_DIR)/library" ]; then \
 		mkdir -p $(ANALOG_DIR)/library && \
@@ -178,11 +182,6 @@ _create_analog_block:
 	fi
 	@sed -e 's/@BLOCK_NAME@/$(BLOCK_NAME)/g' -e 's/@BLOCK_DEPENDS@/$(DEPENDS)/g' \
 		analog/build/config.mk.template > $(ANALOG_DIR)/$(BLOCK_NAME)/build/config.mk
-	@cp analog/schemify/project.lua $(ANALOG_DIR)/$(BLOCK_NAME)/
-	@{ printf 'schemify 1 project\n  init project.lua\n\nlib $(BLOCK_NAME) path schematics\n'; \
-		for d in $(DEPENDS); do printf 'lib %s path ../%s/schematics\n' $$d $$d; done; } \
-		> $(ANALOG_DIR)/$(BLOCK_NAME)/schemify.project
-	@printf '.schemify/\n' > $(ANALOG_DIR)/$(BLOCK_NAME)/.gitignore
 	@cd $(ANALOG_DIR)/$(BLOCK_NAME)/build && \
 		mkdir -p layout schematic validation sim va && \
 		cp -r ../../../.flows/analog/build/layout/* ./layout/ 2>/dev/null || true && \
@@ -190,6 +189,12 @@ _create_analog_block:
 		cp -r ../../../.flows/analog/build/validation/* ./validation/ 2>/dev/null || true && \
 		cp -r ../../../.flows/analog/build/sim/* ./sim/ 2>/dev/null || true && \
 		cp -r ../../../.flows/analog/build/va/* ./va/ 2>/dev/null || true
+	@{ printf 'schemify 1 project\n  init project.lua\n  root ../..\n\n'; \
+		printf 'lib %s path schematics\n' $(BLOCK_NAME); \
+		for d in $(DEPENDS); do printf 'lib %s path ../%s/schematics\n' $$d $$d; done; \
+		printf '\nplace tb_*.shcomp test\nplace *.shbench test\nplace *.shcomp schematics\n'; } \
+		> $(ANALOG_DIR)/$(BLOCK_NAME)/build/schematic/schemify.project
+	@printf '.schemify/\nspice/\nxschem/\n' > $(ANALOG_DIR)/$(BLOCK_NAME)/build/schematic/.gitignore
 
 # Internal target to create digital structure
 _create_digital_structure:
