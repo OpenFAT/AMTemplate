@@ -41,10 +41,11 @@ spice:
 	done
 
 ## lvs_netlist - netlist the top cell to spice/$(TOP_SCHEMATIC).spice, the deck validation/ compares
+# CDL, Schemify's LVS dialect: the top cell as a .SUBCKT with *.PININFO, no code blocks.
 lvs_netlist:
 	@[ -f $(TOP_CELL) ] || { echo "No top cell $(TOP_CELL) — draw it with 'make schematic'."; exit 1; }
 	@mkdir -p spice
-	$(SCHEMIFY) netlist $(TOP_CELL) --dialect espice -o spice/$(TOP_SCHEMATIC).spice
+	$(SCHEMIFY) netlist $(TOP_CELL) --dialect cdl -o spice/$(TOP_SCHEMATIC).spice
 
 ## xschem - export every cell to xschem (.sch/.sym and an xschemrc fragment) in xschem/
 xschem:
