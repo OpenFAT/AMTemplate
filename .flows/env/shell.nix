@@ -13,7 +13,7 @@ let
   # Schemify: the schematic editor each analog block is a project of, and the online
   # viewer's tools (`make -C .flows SchemifySite`). Its plugins come from each block's
   # project.lua, never from here.
-  schemify = builtins.getFlake "github:OpenFAT/Schemify/80df2ba456c702988c28fbd7ecc72eee5d4d254a";
+  schemify = builtins.getFlake "github:OpenFAT/Schemify/3ccd6a308f2d0351318a5110d4919f2013508a0a";
   # ESPice: the SPICE simulator (`BACKEND = espice`). VerA: the Verilog-A compiler ESPice's
   # models come through.
   espice = builtins.getFlake "github:OpenFAT/ESPice/39aa1823c6421cf2cdc5689d24c8ecd0e468f1dc";
